@@ -42,7 +42,41 @@ Tw_tool = [0.984  0.177  0.024 727.089;
            0.027 -0.015 -0.999 732.233;
              0      0      0      1   ];
 
-theta = ikinelbow(a, d, Tw_tool)
+theta = ikinelbow(a, d, Tw_tool, 1, 0, 0);
+
+% tests = load('test_cases.mat')
+% fileID = fopen('joint_angles.txt','w');
+% 
+% theta = ikinelbow(a, d, tests.T1, 1, 0, 0);
+% fprintf(fileID,'%8.3f,',theta);
+% fprintf(fileID,'\n');
+% 
+% theta = ikinelbow(a, d, tests.T2, 1, 0, 0);
+% fprintf(fileID,'%8.3f,',theta);
+% fprintf(fileID,'\n');
+
+poses = load('poses.mat');
+fileID = fopen('solutions.txt','w');
+
+theta = ikinelbow(a, d, poses.above_goal, 1, 0, 0);
+fprintf(fileID,'%8.3f,',theta);
+fprintf(fileID,'\n');
+
+theta = ikinelbow(a, d, poses.above_object, 1, 0, 0);
+fprintf(fileID,'%8.3f,',theta);
+fprintf(fileID,'\n');
+
+theta = ikinelbow(a, d, poses.goal, 1, 0, 0);
+fprintf(fileID,'%8.3f,',theta);
+fprintf(fileID,'\n');
+
+theta = ikinelbow(a, d, poses.midpoint, 1, 0, 0);
+fprintf(fileID,'%8.3f,',theta);
+fprintf(fileID,'\n');
+
+theta = ikinelbow(a, d, poses.object, 1, 0, 0);
+fprintf(fileID,'%8.3f,',theta);
+fprintf(fileID,'\n');
 
 
 function R = rotmatx(alpha)
@@ -57,7 +91,7 @@ function R = rotmatzx(theta, alpha)
                   0             sin(alpha)             cos(alpha)];
 end
 
-function thetas = ikinelbow(ais, dis, Tw_tool)
+function thetas = ikinelbow(ais, dis, Tw_tool,LR,UD,NF)
     alphas = [-pi/2 0 -pi/2 pi/2 -pi/2 0 0];
     thetas = zeros(6,0);
     Tw_0 = [ sqrt(2)/2 sqrt(2)/2 0  221;
@@ -66,7 +100,7 @@ function thetas = ikinelbow(ais, dis, Tw_tool)
                  0         0     0    1];
     T0_w = inv(Tw_0);
 
-%   revome world view
+%   remove world view
     T0_tool = mtimes(T0_w, Tw_tool);
     R0_tool = T0_tool(1:3,1:3);
     d0_tool = T0_tool(1:3,4);
@@ -81,7 +115,11 @@ function thetas = ikinelbow(ais, dis, Tw_tool)
 %   solve for joint angles 1-3
     x1_1 = [1 0 0].';
     z0_0 = [0 0 1].';
-    thetas(1) = atan2(d0_4(2), d0_4(1));
+    if LR == 1
+      thetas(1) = atan2(d0_4(2), d0_4(1));
+    else
+      thetas(1) = atan(d0_4(2) / d0_4(1));
+    end
     R0_1 = rotmatzx(thetas(1), alphas(1));
     d1_4 = mtimes( R0_1.', (d0_4 - dis(1)*z0_0) ) - ais(1)*x1_1;
 
@@ -95,6 +133,9 @@ function thetas = ikinelbow(ais, dis, Tw_tool)
     top = a12p - xy2;
     bot = xy2 - a12m;
     thetas(3) = 2 * atan( sqrt( top / bot ) );
+    if UD == 1
+      thetas(3) = -thetas(3);
+    end
 
     phi = atan2(y, x);
     yh = a2h * sin(thetas(3));
@@ -112,10 +153,16 @@ function thetas = ikinelbow(ais, dis, Tw_tool)
     R3_6 = mtimes(R0_3.', R0_6);
 
     thetas(4) = atan(-R3_6(2,3) / -R3_6(1,3));
-    if thetas(4) > (pi/2)
-        thetas(4) = thetas(4) - pi;
-    elseif thetas(4) < (-pi/2)
+    if NF == 0
+      if thetas(4) > (pi/2)
+          thetas(4) = thetas(4) - pi;
+      elseif thetas(4) < (-pi/2)
+          thetas(4) = thetas(4) + pi;
+      end
+    else
+      if thetas(4) < (pi/2) & thetas(4) > (-pi/2)
         thetas(4) = thetas(4) + pi;
+      end
     end
 
     yh = -R3_6(1,3)*cos(thetas(4)) - R3_6(2,3)*sin(thetas(4));

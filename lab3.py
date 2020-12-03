@@ -43,7 +43,7 @@ def ikinelbow(ais, dis, Tw_tool):
     # T0_w2[:3, -1] = -1*np.matmul(T0_w2[:3, :3], T0_w2[:3, -1])
     # import pdb; pdb.set_trace()
 
-    # revome world view
+    # remove world view
     T0_tool = np.matmul(T0_w, Tw_tool)
     R0_tool = T0_tool[:3,:3]
     d0_tool = T0_tool[:3,-1]

@@ -79,10 +79,12 @@ function thetas = ikinebaxter(a1,a2,d1,d4,d6,T,LR,UD,NF)
     maxdist = a2 + d4 + d6;
     xydist = sqrt(d0_6(1)^2 + d0_6(2)^2);
     if xydist > (maxdist+a1)
-        "return None"
+        ME = MException('xy dist too far');
+        throw(ME)
     end
     if d0_6(3) > (maxdist+d1)
-        "return None"
+        ME = MException('z dist too far');
+        throw(ME)
     end
 
 %   find d0_4
