@@ -46,17 +46,17 @@ theta = ikinelbow(a, d, Tw_tool, 1, 0, 0);
 
 % tests = load('test_cases.mat')
 % fileID = fopen('joint_angles.txt','w');
-% 
+%
 % theta = ikinelbow(a, d, tests.T1, 1, 0, 0);
 % fprintf(fileID,'%8.3f,',theta);
 % fprintf(fileID,'\n');
-% 
+%
 % theta = ikinelbow(a, d, tests.T2, 1, 0, 0);
 % fprintf(fileID,'%8.3f,',theta);
 % fprintf(fileID,'\n');
 
 poses = load('poses.mat');
-fileID = fopen('solutions.txt','w');
+fileID = fopen('joint_angles.txt','w');
 
 theta = ikinelbow(a, d, poses.above_goal, 1, 0, 0);
 fprintf(fileID,'%8.3f,',theta);
@@ -104,6 +104,18 @@ function thetas = ikinelbow(ais, dis, Tw_tool,LR,UD,NF)
     T0_tool = mtimes(T0_w, Tw_tool);
     R0_tool = T0_tool(1:3,1:3);
     d0_tool = T0_tool(1:3,4);
+
+%   check workspace
+    maxdist = ais(2) + dis(4) + dis(6);
+    xydist = sqrt(d0_tool(1)^2 + d0_tool(2)^2);
+    if xydist > (maxdist+a1)
+        ME = MException('xy dist too far');
+        throw(ME)
+    end
+    if d0_tool(3) > (maxdist+d1)
+        ME = MException('z dist too far');
+        throw(ME)
+    end
 
 %   find R0_6 and d0_4 (ie remove tool view)
     R0_6 = mtimes(R0_tool, rotmatx(alphas(7)).');
